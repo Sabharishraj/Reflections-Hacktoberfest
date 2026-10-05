@@ -1,4 +1,3 @@
-# Reflections-Hacktoberfest
 # Reflections
 
 **Reflections** is a privacy-first, offline AI journaling application that analyzes personal journal entries, identifies recurring patterns, retrieves similar past experiences, and highlights previous instances of recovery.
