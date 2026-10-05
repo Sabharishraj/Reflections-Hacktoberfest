@@ -47,16 +47,4 @@ def extract_preferences(entry_text):
     except Exception as e:
         return []
 
-def extract_entities(entry_text):
-    """Extract named entities from the journal entry."""
-    prompt = f"""
-    Extract named entities from this journal entry: exams, people, subjects, places, recurring events (e.g. ["CAT 2", "maths", "library", "Priya"]).
-    Return ONLY a JSON list of strings. Empty list allowed.
-    Entry: "{entry_text}"
-    """
-    try:
-        response = ollama.generate(model='deepseek-r1:1.5b', prompt=prompt, format='json')
-        result = json.loads(response['response'])
-        return result if isinstance(result, list) else []
-    except Exception as e:
-        return []
+

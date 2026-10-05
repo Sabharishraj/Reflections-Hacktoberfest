@@ -1,4 +1,7 @@
-import calendar
+import re
+
+# 1. HEATMAP.PY
+heatmap_code = """import calendar
 from datetime import datetime
 import db
 
@@ -44,3 +47,6 @@ def render_heatmap_html(con=None):
     html += laurel
     
     return html + '</div>'
+"""
+with open("heatmap.py", "w") as f:
+    f.write(heatmap_code)

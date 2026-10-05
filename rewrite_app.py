@@ -1,4 +1,6 @@
-import streamlit as st
+import re
+
+app_code = """import streamlit as st
 import db
 import search
 import extract
@@ -22,21 +24,6 @@ def render_nav():
     active_idx = 1 if st.session_state.nav == 'home' else 2
     st.markdown(f'''
     <style>
-    /* =========================================================
-       THEME LOCK (Cream Background + Grid + Ink Text)
-       Do not remove or alter this block. It prevents dark mode.
-       ========================================================= */
-    body, .stApp, [data-testid="stAppViewContainer"], [data-testid="stAppViewContainer"] > .main {{
-        background-color: #faf7f0 !important;
-        background-image: linear-gradient(rgba(0,0,0,0.07) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.07) 1px, transparent 1px) !important;
-        background-size: 24px 24px !important;
-        color: #1a1a1a !important;
-    }}
-    [data-testid="stMarkdownContainer"] p, [data-testid="stMarkdownContainer"] span, [data-testid="stMarkdownContainer"] h1, [data-testid="stMarkdownContainer"] h2, [data-testid="stMarkdownContainer"] h3, [data-testid="stMarkdownContainer"] h4, [data-testid="stMarkdownContainer"] div {{
-        color: #1a1a1a;
-    }}
-    /* ========================================================= */
-    
     /* 1. HIDE SIDEBAR ENTIRELY */
     [data-testid="stSidebar"], [data-testid="collapsedControl"] {{ display: none !important; }}
     
@@ -47,38 +34,33 @@ def render_nav():
     p, li {{ font-size: 17px; color: #6b6b6b; }}
     h3 {{ font-size: 30px !important; margin-bottom: 8px !important; }}
     h1, h2, h3, h4 {{ font-family: 'DM Serif Display', Georgia, serif !important; color: #1a1a1a !important; font-weight: normal !important; }}
-    .card-label {{ font-size: 12px; text-transform: uppercase; letter-spacing: 2px; color: #6b6b6b; margin-bottom: 8px; font-weight: bold; font-variant: small-caps; }}
+    .card-label {{ font-size: 12px; text-transform: uppercase; letter-spacing: 2px; color: #6b6b6b; margin-bottom: 8px; font-weight: bold; }}
     .card-value {{ font-size: 28px; font-family: 'DM Serif Display', serif; color: #1a1a1a; margin-bottom: 4px; }}
     .highlight {{ background-color: #ffd966; padding: 0 4px; border-radius: 2px; }}
     
     /* 4. TAPE AND CHIPS */
-    .tape {{ position: absolute; background: rgba(255, 217, 102, 0.6); width: 80px; height: 24px; top: -5px; left: -10px; transform: rotate(35deg); box-shadow: 1px 1px 3px rgba(0,0,0,0.1); border: 1px solid rgba(0,0,0,0.05); z-index: 10; pointer-events: none; clip-path: polygon(0% 5%, 5% 0%, 95% 5%, 100% 15%, 98% 85%, 95% 100%, 5% 95%, 0% 90%); }}
-    .tape.pink {{ background: rgba(244, 167, 195, 0.85); transform: translateX(-50%) rotate(2deg); width: 80px; top: -10px; left: 50%; clip-path: none; }}
+    .tape {{ position: absolute; background: rgba(255, 217, 102, 0.85); width: 60px; height: 20px; top: -10px; left: 50%; transform: translateX(-50%) rotate(-2deg); box-shadow: 1px 1px 3px rgba(0,0,0,0.1); border: 1px solid rgba(0,0,0,0.05); z-index: 0; pointer-events: none; }}
+    .tape.pink {{ background: rgba(244, 167, 195, 0.85); transform: translateX(-50%) rotate(2deg); width: 80px; }}
     .emo-chip {{ display: inline-block; background: #ffffff; color: #1a1a1a; padding: 4px 10px; border-radius: 16px; font-size: 12px; font-weight: bold; border: 2px solid #1a1a1a; box-shadow: 2px 2px 0 rgba(0,0,0,0.1); margin: 2px 4px 2px 0; }}
-    .timeline {{ position: relative; margin-left: 10px; margin-top: 16px; padding-bottom: 20px; color: #1a1a1a !important; }}
+    .timeline {{ position: relative; margin-left: 10px; margin-top: 16px; padding-bottom: 20px; }}
     .timeline-dot {{ position: absolute; left: -14px; top: -10px; width: 28px; height: 100%; }}
     .timeline-dot svg {{ display: block; overflow: visible; }}
-    .recovery-block {{ border: 2px dashed #1a1a1a; margin-top: 16px; background: rgba(244, 167, 195, 0.15); padding: 16px; border-radius: 4px; position: relative; color: #1a1a1a !important; }}
+    .recovery-block {{ border: 2px dashed #1a1a1a; margin-top: 16px; background: rgba(244, 167, 195, 0.15); padding: 16px; border-radius: 4px; position: relative; }}
 
     /* 5. ALL BORDERED CONTAINERS BECOME WHITE CARDS */
     [data-testid="stVerticalBlockBorderWrapper"] {{
-        background-color: #ffffff !important;
-        background-image: none !important;
+        background: #ffffff !important;
         border: 2px solid #1a1a1a !important;
         border-radius: 12px !important;
         box-shadow: 4px 4px 0 rgba(0,0,0,0.15) !important;
         padding: 20px !important;
         margin-bottom: 16px;
         position: relative;
-        color: #1a1a1a !important;
-        z-index: 1;
     }}
-
     
-    /* Pattern Insights: sticky note style */
+    /* Give pattern insights a yellow sticky note style by injecting a class marker inside */
     [data-testid="stVerticalBlockBorderWrapper"]:has(.is-sticky) {{
-        background-color: #fff3bf !important; background-image: none !important;
-        transform: rotate(-1deg);
+        background: #fff3bf !important;
     }}
     [data-testid="stVerticalBlockBorderWrapper"]:has(.is-sticky)::before {{
         content: ''; position: absolute; top: 6px; left: 50%; transform: translateX(-50%);
@@ -90,16 +72,14 @@ def render_nav():
     [data-testid="stVerticalBlockBorderWrapper"]:first-of-type {{
         padding: 12px 24px !important;
         margin-bottom: 24px !important;
-        transform: none !important;
     }}
-    
     [data-testid="stVerticalBlockBorderWrapper"]:first-of-type button {{
-        background: transparent !important;
-        border: none !important;
         box-shadow: none !important;
+        border: none !important;
+        background: transparent !important;
     }}
     
-    /* Home/Analysis Links */
+    /* Nav links (Center/Right column) */
     [data-testid="stVerticalBlockBorderWrapper"]:first-of-type [data-testid="column"]:nth-child(2) button {{
         font-family: 'DM Serif Display', serif !important;
         font-size: 16px !important;
@@ -112,17 +92,14 @@ def render_nav():
         text-underline-offset: 4px !important;
     }}
     
-    /* Demo/Clear Actions */
+    /* Action buttons (Far Right column) */
     [data-testid="stVerticalBlockBorderWrapper"]:first-of-type [data-testid="column"]:nth-child(3) button {{
-        background: #ffffff !important;
-        border: 2px solid #1a1a1a !important;
-        color: #1a1a1a !important;
+        border: 1px solid #2e6fb0 !important;
+        color: #2e6fb0 !important;
         border-radius: 20px !important;
         font-size: 14px !important;
-        padding: 4px 12px !important;
+        padding: 2px 12px !important;
         font-family: sans-serif !important;
-        box-shadow: 2px 2px 0 rgba(0,0,0,0.15) !important;
-        transition: all 0.2s !important;
     }}
     [data-testid="stVerticalBlockBorderWrapper"]:first-of-type [data-testid="column"]:nth-child(3) button:hover {{
         background: #2e6fb0 !important;
@@ -132,7 +109,7 @@ def render_nav():
     /* 7. WIDGET OVERRIDES */
     [data-testid="stTextArea"] textarea {{ 
         height: 260px !important; 
-        background-color: #fdfbf5 !important;
+        background-color: #faf7f0 !important;
         background-image: repeating-linear-gradient(transparent, transparent 31px, rgba(46,111,176,0.2) 31px, rgba(46,111,176,0.2) 32px) !important;
         line-height: 32px !important;
         border: 2px solid #1a1a1a !important; 
@@ -142,11 +119,10 @@ def render_nav():
         box-shadow: inset 2px 2px 5px rgba(0,0,0,0.05) !important;
         padding-top: 6px !important;
     }}
-    [data-testid="stTextArea"] textarea:focus {{ border-color: #2e6fb0 !important; box-shadow: 0 0 0 1px #2e6fb0 !important; }}
     [data-testid="stTextArea"] textarea::placeholder {{ font-style: italic; color: #6b6b6b; }}
     
     .reflect-btn [data-testid="baseButton-secondary"] {{
-        background: linear-gradient(135deg, #2e6fb0, #5aa9e6) !important;
+        background: #2e6fb0 !important;
         color: #ffffff !important;
         border: 2px solid #1a1a1a !important;
         border-radius: 40px !important;
@@ -164,16 +140,17 @@ def render_nav():
     
     /* Slight rotations for columns containing cards */
     [data-testid="stHorizontalBlock"] > [data-testid="column"]:nth-child(1) > [data-testid="stVerticalBlockBorderWrapper"] {{ transform: rotate(-1.5deg); }}
-    [data-testid="stHorizontalBlock"] > [data-testid="column"]:nth-child(2) > [data-testid="stVerticalBlockBorderWrapper"] {{ transform: rotate(1deg); }}
+    [data-testid="stHorizontalBlock"] > [data-testid="column"]:nth-child(2) > [data-testid="stVerticalBlockBorderWrapper"] {{ transform: rotate(1.5deg); }}
     [data-testid="stHorizontalBlock"] > [data-testid="column"]:nth-child(3) > [data-testid="stVerticalBlockBorderWrapper"] {{ transform: rotate(-0.5deg); }}
-    [data-testid="stHorizontalBlock"] > [data-testid="column"]:nth-child(4) > [data-testid="stVerticalBlockBorderWrapper"] {{ transform: rotate(2deg); }}
+    [data-testid="stHorizontalBlock"] > [data-testid="column"]:nth-child(4) > [data-testid="stVerticalBlockBorderWrapper"] {{ transform: rotate(1deg); }}
+    
     </style>
     ''', unsafe_allow_html=True)
     
     with st.container(border=True):
-        col_title, col_links = st.columns([2, 1])
+        col_title, col_links, col_actions = st.columns([3, 2, 2])
         with col_title:
-            st.markdown('<div style="font-family:\'DM Serif Display\',serif; font-size:20px; line-height:2.0; color:#1a1a1a; text-transform:uppercase; font-weight:bold;">REFLECTIONS</div>', unsafe_allow_html=True)
+            st.markdown('<div style="font-family:\\'DM Serif Display\\',serif; font-size:20px; line-height:2.0; color:#1a1a1a;">🔹 AI Reflection Journal</div>', unsafe_allow_html=True)
         with col_links:
             c1, c2 = st.columns(2)
             with c1:
@@ -184,28 +161,37 @@ def render_nav():
                 if st.button("Analysis"):
                     st.session_state.nav = 'analysis'
                     st.rerun()
+        with col_actions:
+            c3, c4 = st.columns(2)
+            with c3:
+                if st.button("Load Demo"):
+                    seed.load_demo_data()
+                    st.rerun()
+            with c4:
+                if st.button("Clear Data"):
+                    seed.clear_all_data()
+                    st.rerun()
 
 render_nav()
 
 if st.session_state.nav == 'home':
     all_entries = db.get_all_entries()
 
-    st.markdown(f'''
-    <div style="background:#ffffff; border:2px solid #1a1a1a; border-radius:12px; box-shadow:4px 4px 0 rgba(0,0,0,0.15); padding:24px; color:#1a1a1a;">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
+    with st.container(border=True):
+        st.markdown(f'''
+        <div style="display: flex; justify-content: space-between; align-items: center; position: relative; overflow: hidden;">
             <div style="flex: 1;">
-                <h1 style="font-size: 44px; margin: 0; line-height: 1.1;">AI <span style="background-color: #ffd966; padding: 0 4px; border-radius: 2px;">Reflection</span> Journal</h1>
+                <h1 style="font-size: 44px; margin: 0; line-height: 1.1;">AI <span class="highlight">Reflection</span> Journal</h1>
                 <p style="margin: 8px 0 0 0; color: #6b6b6b; font-size: 17px;">Discover patterns in your daily life.</p>
             </div>
-            <div style="display: flex; align-items: center; gap: 24px;">
-                {prop_img('marcus.png', height=140)}
-                <div style="font-family: 'DM Serif Display', serif; font-style: italic; color: #6b6b6b; font-size: 17px; line-height: 1.3; max-width: 250px;">
+            <div style="display: flex; align-items: center; gap: 24px; border-left: 2px dashed #1a1a1a; padding-left: 24px; max-width: 400px;">
+                {prop_img('marcus.png', rotation=2, height=140)}
+                <div style="font-family: 'DM Serif Display', serif; font-style: italic; color: #6b6b6b; font-size: 17px; line-height: 1.3;">
                     "Meditations — the original private journal, never meant to be read by anyone else."
                 </div>
             </div>
         </div>
-    </div>
-    ''', unsafe_allow_html=True)
+        ''', unsafe_allow_html=True)
         
     if all_entries:
         total_days = len(set(e['created_at'].split(' ')[0] for e in all_entries))
@@ -233,61 +219,65 @@ if st.session_state.nav == 'home':
         today_intensity = today_entry['intensity']
 
         with col1:
-            intensity_html = f'<div style="color:#6b6b6b; font-size:13px;">Intensity: {today_intensity}</div>' if today_intensity.lower() not in ['low', 'none'] else ''
-            st.markdown(f'<div style="background:#ffffff; border:2px solid #1a1a1a; border-radius:12px; box-shadow:4px 4px 0 rgba(0,0,0,0.15); padding:20px; color:#1a1a1a; position:relative; min-height:140px;"><div style="position: absolute; background: rgba(255, 217, 102, 0.6); width: 80px; height: 24px; top: -5px; left: -10px; transform: rotate(35deg); box-shadow: 1px 1px 3px rgba(0,0,0,0.1); border: 1px solid rgba(0,0,0,0.05); z-index: 10; pointer-events: none; clip-path: polygon(0% 5%, 5% 0%, 95% 5%, 100% 15%, 98% 85%, 95% 100%, 5% 95%, 0% 90%);"></div><div style="font-size: 12px; text-transform: uppercase; letter-spacing: 2px; color: #6b6b6b; margin-bottom: 8px; font-weight: bold; font-variant: small-caps;">Today</div><div style="font-size: 28px; font-family: \'DM Serif Display\', serif; color: #1a1a1a; margin-bottom: 4px;">{today_emotion.capitalize()}</div>{intensity_html}</div>', unsafe_allow_html=True)
+            with st.container(border=True):
+                intensity_html = f'<div style="color:#6b6b6b; font-size:13px;">Intensity: {today_intensity}</div>' if today_intensity.lower() not in ['low', 'none'] else ''
+                st.markdown(f'<div class="tape"></div><div class="card-label">Today</div><div class="card-value">{today_emotion.capitalize()}</div>{intensity_html}', unsafe_allow_html=True)
         with col2:
-            st.markdown(f'<div style="background:#ffffff; border:2px solid #1a1a1a; border-radius:12px; box-shadow:4px 4px 0 rgba(0,0,0,0.15); padding:20px; color:#1a1a1a; position:relative; min-height:140px;"><div style="font-size: 12px; text-transform: uppercase; letter-spacing: 2px; color: #6b6b6b; margin-bottom: 8px; font-weight: bold; font-variant: small-caps;">Top Emotion</div><div style="font-size: 28px; font-family: \'DM Serif Display\', serif; color: #1a1a1a; margin-bottom: 4px;">{most_common_emotion.capitalize()}</div></div>', unsafe_allow_html=True)
+            with st.container(border=True):
+                st.markdown(f'<div class="card-label">Top Emotion</div><div class="card-value">{most_common_emotion.capitalize()}</div>', unsafe_allow_html=True)
         with col3:
-            st.markdown(f'<div style="background:#ffffff; border:2px solid #1a1a1a; border-radius:12px; box-shadow:4px 4px 0 rgba(0,0,0,0.15); padding:20px; color:#1a1a1a; position:relative; min-height:140px;"><div style="font-size: 12px; text-transform: uppercase; letter-spacing: 2px; color: #6b6b6b; margin-bottom: 8px; font-weight: bold; font-variant: small-caps;">Top Trigger</div><div style="font-size: 28px; font-family: \'DM Serif Display\', serif; color: #1a1a1a; margin-bottom: 4px;">{most_common_trigger.capitalize()}</div></div>', unsafe_allow_html=True)
+            with st.container(border=True):
+                st.markdown(f'<div class="card-label">Top Trigger</div><div class="card-value">{most_common_trigger.capitalize()}</div>', unsafe_allow_html=True)
         with col4:
-            day_word = "day" if total_days == 1 else "days"
-            st.markdown(f'<div style="background:#ffffff; border:2px solid #1a1a1a; border-radius:12px; box-shadow:4px 4px 0 rgba(0,0,0,0.15); padding:20px; color:#1a1a1a; position:relative; min-height:140px;"><div style="font-size: 12px; text-transform: uppercase; letter-spacing: 2px; color: #6b6b6b; margin-bottom: 8px; font-weight: bold; font-variant: small-caps;">History</div><div style="font-size: 28px; font-family: \'DM Serif Display\', serif; color: #1a1a1a; margin-bottom: 4px;">{total_days}</div><div style="color:#6b6b6b; font-size:13px;">{day_word} this month</div></div>', unsafe_allow_html=True)
+            with st.container(border=True):
+                day_word = "day" if total_days == 1 else "days"
+                st.markdown(f'<div class="card-label">History</div><div class="card-value">{total_days}</div><div style="color:#6b6b6b; font-size:13px;">{day_word} this month</div>', unsafe_allow_html=True)
             
         st.markdown("<br>", unsafe_allow_html=True)
-        
-        c_title, c_prop = st.columns([3, 1])
-        with c_title:
-            st.markdown(section_header("Pattern Insights"), unsafe_allow_html=True)
-        with c_prop:
-            st.markdown(f'<div style="display:flex; justify-content:flex-end;">{prop_img("aristotle.png", height=130)}</div>', unsafe_allow_html=True)
+        st.markdown(section_header("Pattern Insights"), unsafe_allow_html=True)
         
         if len(all_entries) < 5:
-            st.markdown('<div style="background:#ffffff; border:2px solid #1a1a1a; border-radius:12px; box-shadow:4px 4px 0 rgba(0,0,0,0.15); padding:20px; color:#1a1a1a; position:relative;">Keep writing — patterns emerge after a few more entries.</div>', unsafe_allow_html=True)
+            with st.container(border=True):
+                st.write("Keep writing — patterns emerge after a few more entries.")
         else:
-            meander_svg = '''<svg width="100%" height="8" style="position:absolute; bottom:0; left:0; border-bottom-left-radius:10px; border-bottom-right-radius:10px; overflow:hidden;"><pattern id="meander" x="0" y="0" width="20" height="8" patternUnits="userSpaceOnUse"><path d="M0,0 h16 v8 h-4 v-4 h-8 v8" fill="none" stroke="#1a1a1a" stroke-width="2"/></pattern><rect width="100%" height="8" fill="url(#meander)"/></svg>'''
-            st.markdown(f'''
-            <div style="background:#fff3bf; border:2px solid #1a1a1a; border-radius:12px; box-shadow:4px 4px 0 rgba(0,0,0,0.15); padding:24px; color:#1a1a1a; position:relative; transform: rotate(-1deg); margin-bottom: 16px;">
-                <div style="position: absolute; top: 8px; left: 50%; transform: translateX(-50%); width: 12px; height: 12px; background: #e05252; border-radius: 50%; border: 2px solid #1a1a1a; box-shadow: 2px 2px 0 rgba(0,0,0,0.1);"></div>
-                <div style="position:relative; padding-bottom: 24px;">
-                    <p style="font-size: 17px; margin: 0 0 16px 0; color: #1a1a1a;">Based on your past entries, you frequently mention <strong style="color:#1a1a1a; background:rgba(255,217,102,0.5); padding:0 4px;">{most_common_trigger}</strong> in situations associated with feeling <strong style="color:#1a1a1a; background:rgba(255,217,102,0.5); padding:0 4px;">{most_common_emotion}</strong>.</p>
-                    <div style="font-family: 'DM Serif Display', serif; font-size: 18px; color:#1a1a1a;">"Knowing yourself is the beginning of all wisdom."</div>
-                    <div style="font-variant: small-caps; color:#6b6b6b; font-weight:bold; font-size: 12px; margin-top: 4px;">— Aristotle</div>
+            with st.container(border=True):
+                meander_svg = '''<svg width="100%" height="8" style="position:absolute; bottom:0; left:0;"><pattern id="meander" x="0" y="0" width="20" height="8" patternUnits="userSpaceOnUse"><path d="M0,0 h16 v8 h-4 v-4 h-8 v8" fill="none" stroke="#1a1a1a" stroke-width="2"/></pattern><rect width="100%" height="8" fill="url(#meander)"/></svg>'''
+                st.markdown(f'''
+                <div class="is-sticky"></div>
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px;">
+                    <div style="flex: 1; padding-right: 24px;">
+                        <p style="font-size: 17px; margin: 0 0 16px 0; color: #6b6b6b;">Based on your past entries, you frequently mention <strong style="color:#1a1a1a;">{most_common_trigger}</strong> in situations associated with feeling <strong style="color:#1a1a1a;">{most_common_emotion}</strong>.</p>
+                        <div style="font-family: 'DM Serif Display', serif; font-size: 18px; color:#1a1a1a;">"Knowing yourself is the beginning of all wisdom."</div>
+                        <div style="font-variant: small-caps; color:#6b6b6b; font-weight:bold; font-size: 14px; margin-top: 4px;">— Aristotle</div>
+                    </div>
+                    <div style="display: flex; flex-direction: column; align-items: center; gap: 8px; z-index: 5;">
+                        {prop_img('aristotle.png', rotation=1, height=130)}
+                    </div>
+                    {meander_svg}
                 </div>
-                {meander_svg}
-            </div>
-            ''', unsafe_allow_html=True)
+                ''', unsafe_allow_html=True)
                 
         st.markdown("<br>", unsafe_allow_html=True)
         with st.container(border=True):
-            st.markdown('<h4 style="margin:0 0 16px 0; font-family:\'DM Serif Display\', serif;">Monthly Reflection Calendar</h4>', unsafe_allow_html=True)
             st.html(heatmap.render_heatmap_html())
         
         st.markdown("<br><br>", unsafe_allow_html=True)
 
-    # --- NEW ENTRY ---
-    c_new, c_thinker = st.columns([3, 1])
-    with c_new:
-        st.markdown(section_header("New Entry"), unsafe_allow_html=True)
-    with c_thinker:
-        st.markdown(f'''
-        <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px;">
-            {prop_img('thinker.png', rotation=-2, height=150)}
-            <div style="font-size: 12px; color: #6b6b6b; font-style: italic; font-weight: bold; margin-right: 20px;">Think it through.</div>
+    # --- MAIN INPUT ---
+    st.markdown(f'''
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <div style="flex: 1;">
+            {section_header("New Entry")}
         </div>
-        ''', unsafe_allow_html=True)
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
+            {prop_img('thinker.png', rotation=-2, height=150)}
+            <div style="font-size: 12px; color: #6b6b6b; font-style: italic; font-weight: bold;">Think it through.</div>
+        </div>
+    </div>
+    ''', unsafe_allow_html=True)
 
     with st.container(border=True):
-        entry_text = st.text_area("What happened today?", height=260, label_visibility="collapsed")
+        entry_text = st.text_area("What happened today?", height=150, label_visibility="collapsed")
         
         st.markdown('<div class="reflect-btn" style="margin-top:16px;">', unsafe_allow_html=True)
         if st.button("Reflect"):
@@ -302,14 +292,14 @@ if st.session_state.nav == 'home':
                     
                     st.markdown('<div style="color:#2e6fb0; font-weight:bold; margin-bottom:16px;">Entry saved and analyzed!</div>', unsafe_allow_html=True)
                     
-                    st.markdown('<h4 style="font-family: \'DM Serif Display\', serif;">Analysis</h4>', unsafe_allow_html=True)
+                    st.markdown('<h4 style="font-family: \\'DM Serif Display\\', serif;">Analysis</h4>', unsafe_allow_html=True)
                     e_col1, e_col2 = st.columns(2)
                     with e_col1:
                         st.write(f"**Event:** {extracted.get('event')}")
                         st.write(f"**Situation:** {extracted.get('situation')}")
                     with e_col2:
-                        emo_html = "".join([f'<span class="emo-chip">{e.title()}</span>' for e in extracted.get('emotions', [])])
-                        st.markdown(f"**Emotions:** {emo_html}", unsafe_allow_html=True)
+                        emo_html = "".join([f'<span class="emo-chip">{{e.title()}}</span>' for e in extracted.get('emotions', [])])
+                        st.markdown(f"**Emotions:** {{emo_html}}", unsafe_allow_html=True)
                         st.write(f"**Intensity:** {extracted.get('intensity')}")
                         st.write(f"**Triggers:** {', '.join(extracted.get('triggers', []))}")
                         
@@ -338,17 +328,7 @@ if st.session_state.nav == 'home':
                         wavy_line_svg = '''<svg width="24" height="100%" style="position:absolute; top:0; left:0; height:100%;"><path d="M12,0 Q24,20 12,40 T12,80 T12,120 T12,160 T12,200 T12,240 T12,280 T12,320 T12,360 T12,400 T12,440 T12,480 T12,520 T12,560 T12,600 T12,640 T12,680 T12,720 T12,760 T12,800 T12,840 T12,880 T12,920 T12,960 T12,1000" fill="none" stroke="#2e6fb0" stroke-width="2"/></svg>'''
                         
                         if current_is_neg:
-                            c_sim, c_dio = st.columns([3, 1])
-                            with c_sim:
-                                st.markdown(section_header("You've been through something like this before"), unsafe_allow_html=True)
-                            with c_dio:
-                                st.markdown(f'''
-                                <div style="display:flex; flex-direction:column; align-items:flex-end;">
-                                    {prop_img('diogenes.png', height=110)}
-                                    <div style="color:#6b6b6b; font-size:12px; font-style:italic;">"Searching your past for what helped."</div>
-                                </div>
-                                ''', unsafe_allow_html=True)
-                                
+                            st.markdown(section_header("You've been through something like this before"), unsafe_allow_html=True)
                             recovery_matches = []
                             for past in similar_entries:
                                 nd = recovery.get_next_day(past['created_at'])
@@ -356,23 +336,30 @@ if st.session_state.nav == 'home':
                                     recovery_matches.append((past, nd))
                                     
                             if recovery_matches:
+                                st.markdown(f'''
+                                <div style="position:relative; margin-bottom: 24px; display:flex; align-items:center; gap: 16px;">
+                                    {prop_img('diogenes.png', rotation=1.5, height=70)}
+                                    <div style="color:#6b6b6b; font-style:italic; font-family:'DM Serif Display', serif;">"Searching your past for what helped."</div>
+                                </div>
+                                ''', unsafe_allow_html=True)
+                                
                                 st.markdown('<div class="timeline">', unsafe_allow_html=True)
-                                st.markdown(f'<div class="timeline-dot">{wavy_line_svg}</div>', unsafe_allow_html=True)
+                                st.markdown(f'<div class="timeline-dot">{{wavy_line_svg}}</div>', unsafe_allow_html=True)
                                 for past, nd in recovery_matches:
-                                    emo_html = "".join([f'<span class="emo-chip">{e.strip().title()}</span>' for e in past['emotions'].split(',')]) if isinstance(past['emotions'], str) else "".join([f'<span class="emo-chip">{e.title()}</span>' for e in past['emotions']])
+                                    emo_html = "".join([f'<span class="emo-chip">{{e.strip().title()}}</span>' for e in past['emotions'].split(',')]) if isinstance(past['emotions'], str) else "".join([f'<span class="emo-chip">{{e.title()}}</span>' for e in past['emotions']])
                                     
                                     st.markdown(f'''
                                     <div style="position: relative; margin-bottom: 24px; margin-left: 24px;">
-                                        <div style="position:absolute; top:-12px; left:-24px; background:#fff; border:2px solid #1a1a1a; padding:4px 12px; font-family:'DM Serif Display',serif; font-size:14px; transform:rotate(-4deg); box-shadow:3px 3px 0 rgba(0,0,0,0.15); z-index:5;">{past['date']}</div>
+                                        <div style="position:absolute; top:-12px; left:-16px; background:#fff; border:1px solid #1a1a1a; padding:2px 8px; font-weight:bold; font-size:12px; transform:rotate(-2deg); box-shadow:2px 2px 0 rgba(0,0,0,0.15); z-index:5;">{{past['date']}}</div>
                                     ''', unsafe_allow_html=True)
                                     with st.container(border=True):
                                         st.markdown(f'''
-                                        <div class="card-value" style="margin-top: 8px;">{past['event']}</div>
-                                        <div style="margin-bottom:12px;">{emo_html}</div>
+                                        <div class="card-value" style="margin-top: 8px;">{{past['event']}}</div>
+                                        <div style="margin-bottom:12px;">{{emo_html}}</div>
                                         <div class="recovery-block">
                                             <div class="tape pink"></div>
                                             <div style="font-size:11px; text-transform:uppercase; color:#6b6b6b; margin-bottom:4px; font-weight:bold;">How it turned out</div>
-                                            <div style="color:#1a1a1a; font-family:'DM Serif Display', serif; font-size:18px;">{nd['event']} - <span style="font-family:sans-serif; font-size:15px; color:#1a1a1a;">{nd['situation']}</span></div>
+                                            <div style="color:#1a1a1a; font-family:'DM Serif Display', serif; font-size:18px;">{{nd['event']}} - <span style="font-family:sans-serif; font-size:15px; color:#1a1a1a;">{{nd['situation']}}</span></div>
                                         </div>
                                         ''', unsafe_allow_html=True)
                                     st.markdown('</div>', unsafe_allow_html=True)
@@ -384,7 +371,7 @@ if st.session_state.nav == 'home':
                             
                             if similar_entries:
                                 st.markdown('<div class="timeline">', unsafe_allow_html=True)
-                                st.markdown(f'<div class="timeline-dot">{wavy_line_svg}</div>', unsafe_allow_html=True)
+                                st.markdown(f'<div class="timeline-dot">{{wavy_line_svg}}</div>', unsafe_allow_html=True)
                                 for past in similar_entries:
                                     next_entry = db.get_next_day_entry(past['created_at'])
                                     afterward_html = ""
@@ -395,21 +382,21 @@ if st.session_state.nav == 'home':
                                         <div class="recovery-block">
                                             <div class="tape pink"></div>
                                             <div style="font-size:11px; text-transform:uppercase; color:#6b6b6b; margin-bottom:4px; font-weight:bold;">Afterward</div>
-                                            <div style="color:#1a1a1a; font-family:'DM Serif Display', serif; font-size:16px;">{afterward_text}</div>
+                                            <div style="color:#1a1a1a; font-family:'DM Serif Display', serif; font-size:16px;">{{afterward_text}}</div>
                                         </div>
                                         '''
                                         
-                                    emo_html = "".join([f'<span class="emo-chip">{e.strip().title()}</span>' for e in past['emotions'].split(',')]) if isinstance(past['emotions'], str) else "".join([f'<span class="emo-chip">{e.title()}</span>' for e in past['emotions']])
+                                    emo_html = "".join([f'<span class="emo-chip">{{e.strip().title()}}</span>' for e in past['emotions'].split(',')]) if isinstance(past['emotions'], str) else "".join([f'<span class="emo-chip">{{e.title()}}</span>' for e in past['emotions']])
                                     
                                     st.markdown(f'''
                                     <div style="position: relative; margin-bottom: 24px; margin-left: 24px;">
-                                        <div style="position:absolute; top:-12px; left:-24px; background:#fff; border:2px solid #1a1a1a; padding:4px 12px; font-family:'DM Serif Display',serif; font-size:14px; transform:rotate(-4deg); box-shadow:3px 3px 0 rgba(0,0,0,0.15); z-index:5;">{past['date']}</div>
+                                        <div style="position:absolute; top:-12px; left:-16px; background:#fff; border:1px solid #1a1a1a; padding:2px 8px; font-weight:bold; font-size:12px; transform:rotate(-3deg); box-shadow:2px 2px 0 rgba(0,0,0,0.15); z-index:5;">{{past['date']}}</div>
                                     ''', unsafe_allow_html=True)
                                     with st.container(border=True):
                                         st.markdown(f'''
-                                        <div class="card-value" style="margin-top: 8px;">{past['event']}</div>
-                                        <div style="margin-bottom:12px;">{emo_html}</div>
-                                        {afterward_html}
+                                        <div class="card-value" style="margin-top: 8px;">{{past['event']}}</div>
+                                        <div style="margin-bottom:12px;">{{emo_html}}</div>
+                                        {{afterward_html}}
                                         ''', unsafe_allow_html=True)
                                     st.markdown('</div>', unsafe_allow_html=True)
                                 st.markdown('</div>', unsafe_allow_html=True)
@@ -424,16 +411,7 @@ elif st.session_state.nav == 'analysis':
     import analysis
     analysis.render_analysis()
 
-st.markdown('<div style="margin-top: 60px;"></div>', unsafe_allow_html=True)
-with st.container():
-    st.markdown('<div class="is-footer"></div>', unsafe_allow_html=True)
-    fc1, fc2, fc3, fc4 = st.columns([3, 1, 1, 3])
-    with fc2:
-        if st.button("Load Demo Data"):
-            seed.load_demo_data()
-            st.rerun()
-    with fc3:
-        if st.button("Clear All Data"):
-            seed.clear_all_data()
-            st.rerun()
-st.markdown('''<div style="text-align:center; color:#6b6b6b; font-family: monospace; font-size:12px; margin-top:80px; margin-bottom:40px;">* All data stays on this device. Nothing is sent to the cloud.</div>''', unsafe_allow_html=True)
+st.markdown('<div style="text-align:center; color:#6b6b6b; font-family: monospace; font-size:12px; margin-top:80px; margin-bottom:40px;">* All data stays on this device. Nothing is sent to the cloud.</div>', unsafe_allow_html=True)
+"""
+with open("app.py", "w") as f:
+    f.write(app_code)

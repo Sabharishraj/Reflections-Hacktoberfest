@@ -5,7 +5,7 @@ from datetime import datetime
 DB_FILE = "journal.db"
 
 def init_db():
-    """Create the entries table if it doesn't exist."""
+    """Create all necessary tables."""
     conn = sqlite3.connect(DB_FILE)
     cursor = conn.cursor()
     cursor.execute('''
@@ -32,16 +32,15 @@ def init_db():
             evidence TEXT
         )
     ''')
-    # Handle migration for existing entries table (add entities column if it doesn't exist)
-    try:
-        cursor.execute('ALTER TABLE entries ADD COLUMN entities TEXT')
-    except sqlite3.OperationalError:
-        pass # Column already exists
+    # Handle migrations
+    try: cursor.execute('ALTER TABLE entries ADD COLUMN entities TEXT')
+    except sqlite3.OperationalError: pass
+    
     conn.commit()
     conn.close()
 
 def insert_entry(raw, event, situation, emotions, intensity, triggers, created_at=None):
-    """Insert a new journal entry into the database."""
+    """Insert a new journal entry."""
     if created_at is None:
         created_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     
@@ -57,7 +56,7 @@ def insert_entry(raw, event, situation, emotions, intensity, triggers, created_a
     return entry_id
 
 def get_all_entries():
-    """Retrieve all entries ordered by date descending (newest first)."""
+    """Retrieve all entries ordered by date descending."""
     conn = sqlite3.connect(DB_FILE)
     conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
@@ -67,7 +66,7 @@ def get_all_entries():
     return [dict(row) for row in rows]
 
 def get_next_day_entry(created_at_str):
-    """Retrieve the first entry strictly after the given date to see what happened next."""
+    """Retrieve the next entry strictly after the given date."""
     conn = sqlite3.connect(DB_FILE)
     conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
@@ -75,6 +74,7 @@ def get_next_day_entry(created_at_str):
     row = cursor.fetchone()
     conn.close()
     return dict(row) if row else None
+
 def upsert_preferences(prefs):
     """Insert or increment preference mention counts."""
     if not prefs:

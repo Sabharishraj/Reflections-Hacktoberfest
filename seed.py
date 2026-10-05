@@ -54,7 +54,6 @@ def load_demo_data():
     conn = sqlite3.connect(DB_FILE)
     cursor = conn.cursor()
     
-    # Check for existing data
     cursor.execute("SELECT COUNT(*) FROM entries")
     count = cursor.fetchone()[0]
     
@@ -62,14 +61,10 @@ def load_demo_data():
         conn.close()
         return False, f"Database already has {count} entries. Please clear data first!"
         
-    # Set the ending date to 2026-10-05 20:00:00
     end_date = datetime(2026, 10, 5, 20, 0, 0)
-    
     inserted_count = 0
     
-    # Iterate through entries backwards so the first item gets the oldest date
     for i, entry in enumerate(reversed(DEMO_ENTRIES)):
-        # Spread entries out roughly 1.2 days apart to cover 30 days
         entry_date = end_date - timedelta(days=(24 - i) * 1.2)
         date_str = entry_date.strftime("%Y-%m-%d %H:%M:%S")
         
@@ -95,7 +90,6 @@ def clear_all_data():
     """Delete all rows from the entries table."""
     conn = sqlite3.connect(DB_FILE)
     cursor = conn.cursor()
-    cursor.execute("DELETE FROM entries")
     conn.commit()
     conn.close()
     return True
